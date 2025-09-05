@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.ninogateway.config
+package uk.gov.hmrc.ninogateway.models
 
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.libs.json.{Json, Writes}
 
-import javax.inject.{Inject, Singleton}
+case class ErrorResponse(code: String, desc: String)
 
-@Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
-  val appName: String = config.get[String]("appName")
-  val insightsBaseUrl: String = servicesConfig.baseUrl("nino-insights")
+object ErrorResponse {
+  implicit val writes: Writes[ErrorResponse] = Json.writes
 }

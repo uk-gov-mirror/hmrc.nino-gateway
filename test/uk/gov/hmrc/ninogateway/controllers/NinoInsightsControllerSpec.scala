@@ -59,7 +59,7 @@ class NinoInsightsControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       } { _ =>
 
         val fakeRequest = FakeRequest("POST", "/nino-gateway/check/insights")
-          .withJsonBody(Json.parse("""{"nino": "AB123456C"}"""))
+          .withBody(Json.obj("nino" -> "AB123456C"))
           .withHeaders("True-Calling-Client" -> "example-service", "Content-Type" -> "application/json")
 
         val result = controller.any()(fakeRequest)
@@ -79,7 +79,7 @@ class NinoInsightsControllerSpec extends AnyWordSpec with Matchers with GuiceOne
         }
       } { _ =>
         val fakeRequest = FakeRequest("POST", "/nino-gateway/check/insights")
-          .withJsonBody(Json.parse("""{"non-nino": "AB123456C"}"""))
+          .withBody(Json.obj("non-nino" -> "AB123456C"))
           .withHeaders("True-Calling-Client" -> "example-service", "Content-Type" -> "application/json")
 
         val result = controller.any()(fakeRequest)
@@ -89,35 +89,31 @@ class NinoInsightsControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     }
 
     "handle a malformed json payload" in {
-      val errorResponse = """{"code": "MALFORMED_JSON", "path.missing: nino"}""".stripMargin
 
-      Server.withRouterFromComponents(ServerConfig(port = Some(insightsPort))) { components =>
-        import components.{defaultActionBuilder => Action}
-        {
-          case r@SPOST(p"/nino-insights/check/insights") => Action(
-            BadRequest(errorResponse).withHeaders("Content-Type" -> "application/json"))
-        }
-      } { _ =>
-        val fakeRequest = FakeRequest("POST", "/nino-gateway/check/insights")
-          .withTextBody("""{""")
-          .withHeaders("True-Calling-Client" -> "example-service", "Content-Type" -> "application/json")
+      val fakeRequest = FakeRequest("POST", "/nino-gateway/check/insights")
+        .withTextBody("""{""")
+        .withHeaders("True-Calling-Client" -> "example-service", "Content-Type" -> "application/json")
 
-        val result = controller.any()(fakeRequest)
-        status(result) shouldBe Status.BAD_REQUEST
-        contentAsString(result) shouldBe errorResponse
-      }
+      val result = controller.any()(fakeRequest)
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.obj(
+        "statusCode" -> 400,
+        "message"    -> "bad request, cause: invalid json"
+      )
     }
 
     "return bad gateway if there is no connectivity to the downstream service" in {
-      val errorResponse = """{"code": "REQUEST_DOWNSTREAM", "desc": "An issue occurred when the downstream service tried to handle the request"}""".stripMargin
 
       val fakeRequest = FakeRequest("POST", "/nino-gateway/check/insights")
-        .withJsonBody(Json.parse("""{"nino": "AB123456C"}"""))
+        .withBody(Json.obj("nino" -> "AB123456C"))
         .withHeaders("True-Calling-Client" -> "example-service", "Content-Type" -> "application/json")
 
       val result = controller.any()(fakeRequest)
       status(result) shouldBe Status.BAD_GATEWAY
-      contentAsString(result) shouldBe errorResponse
+      contentAsJson(result) shouldBe Json.obj(
+        "code" -> "REQUEST_DOWNSTREAM",
+        "desc" -> "An issue occurred when the downstream service tried to handle the request"
+      )
     }
 
   }
