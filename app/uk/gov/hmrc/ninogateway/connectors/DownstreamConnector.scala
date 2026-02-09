@@ -29,6 +29,7 @@ import uk.gov.hmrc.ninogateway.models.ErrorResponse
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.ws.writeableOf_JsValue
 
 @Singleton
 class DownstreamConnector @Inject()(httpClient: HttpClientV2) extends Logging {
@@ -50,7 +51,7 @@ class DownstreamConnector @Inject()(httpClient: HttpClientV2) extends Logging {
                 ResponseHeader(response.status, cleanseResponseHeaders(response)),
                 HttpEntity.Streamed(response.bodyAsSource, None, response.header(CONTENT_TYPE))
               )
-            }.recover { t: Throwable =>
+            }.recover { (t: Throwable) =>
               logger.warn(s"[forward] An exception of type '${t.getClass.getSimpleName}' occurred when the downstream service tried to handle the request")
               BadGateway(Json.toJson(ErrorResponse(
                 "REQUEST_DOWNSTREAM",

@@ -74,7 +74,7 @@ class NinoInsightsControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       Server.withRouterFromComponents(ServerConfig(port = Some(insightsPort))) { components =>
         import components.{defaultActionBuilder => Action}
         {
-          case r@SPOST(p"/nino-insights/check/insights") => Action(
+          case SPOST(p"/nino-insights/check/insights") => Action(
             BadRequest(errorResponse).withHeaders("Content-Type" -> "application/json"))
         }
       } { _ =>
